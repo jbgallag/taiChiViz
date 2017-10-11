@@ -5,6 +5,9 @@ import vtk
 import time
 import math
 
+import pyaudio
+import numpy as np
+
 class MyInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     global ren
     def __init__(self,parent=None):
@@ -30,7 +33,6 @@ class MyInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
         if key == 'r':
             renWin.Render()
-
 
 
          
@@ -118,6 +120,8 @@ leftFootTV = vtk.vtkDoubleArray()
 rightFootTV = vtk.vtkDoubleArray()
 
 source = vtk.vtkSphereSource()
+headSource = vtk.vtkSphereSource()
+
 #polydata objects for each sensor
 #these represent the ability to have a geometric structure (connected)
 #in our case a vertex at each 3d point
@@ -324,19 +328,22 @@ def Input3dPointsTraj():
     global Head,LeftFoot,LeftHand,RightHand,RightFoot
     #points for Head
     ptsHead.Reset()
-    if headTrajCount + trailSize < headCount:
-        if(headCurrentCount < trailSize):
-            for i in range(0,preReachedTrailSizeCount+1):
-                ptsHead.InsertPoint(headCurrentCount,Head[headCurrentCount][0],Head[headCurrentCount][1],Head[headCurrentCount][2])
-            if(headCurrentCount == trailSize):
-                headTrajCount += 1
-            else:
-                headCurrentCount += 1
-                preReachedTrailSizeCount = headCurrentCount;
-        else:
-            for i in range(headTrajCount,headTrajCount+trailSize):
-                ptsHead.InsertPoint(i-headTrajCount,Head[i][0],Head[i][1],Head[i][2])
-            headTrajCount += 1
+    ptsHead.InsertPoint(0,Head[headCurrentCount][0],Head[headCurrentCount][1],Head[headCurrentCount][2])
+    headCurrentCount = headCurrentCount +1
+
+    # if headTrajCount + trailSize < headCount:
+    #     if(headCurrentCount < trailSize):
+    #         for i in range(0,preReachedTrailSizeCount+1):
+    #             ptsHead.InsertPoint(headCurrentCount,Head[headCurrentCount][0],Head[headCurrentCount][1],Head[headCurrentCount][2])
+    #         if(headCurrentCount == trailSize):
+    #             headTrajCount += 1
+    #         else:
+    #             headCurrentCount += 1
+    #             preReachedTrailSizeCount = headCurrentCount;
+    #     else:
+    #         for i in range(headTrajCount,headTrajCount+trailSize):
+    #             ptsHead.InsertPoint(i-headTrajCount,Head[i][0],Head[i][1],Head[i][2])
+    #         headTrajCount += 1
     #points for leftHand
     ptsLH.Reset()
     preReachedTrailSizeCount = 0
@@ -427,6 +434,13 @@ def SetSphereSource():
     source.SetPhiResolution(20);
     source.Update()
 
+def SetSphereHeadSource():
+    global headSource,sphSize
+    headSource.SetRadius(sphSize*5);
+    headSource.SetThetaResolution(20);
+    headSource.SetPhiResolution(20);
+    headSource.Update()
+
 def SetPolyData():
     global polyDataHead,polyDataLH,polyDataRH,polyDataLF,polyDataRF
     global ptsLH,ptsRH,ptsLF,ptsRF,ptsHead
@@ -437,7 +451,7 @@ def SetPolyData():
     polyDataRF.SetPoints(ptsRF)
 
     
-    polyDataHead.GetPointData().SetScalars(scalars)
+    # polyDataHead.GetPointData().SetScalars(scalars)
     polyDataLH.GetPointData().SetScalars(scalars)
     polyDataRH.GetPointData().SetScalars(scalars)
     polyDataLF.GetPointData().SetScalars(scalars)
@@ -446,8 +460,9 @@ def SetPolyData():
 
 def SetGlyphs():
     global glyphHead,glyphLH,glyphRH,glyphLF,glyphRF
-    global source
-    glyphHead.SetSourceConnection(source.GetOutputPort())
+    global source, headSource
+
+    glyphHead.SetSourceConnection(headSource.GetOutputPort()) #headSource
     glyphHead.SetInputData(polyDataHead)
     if gscale == False:
         glyphHead.ScalingOff()
@@ -675,11 +690,18 @@ SetBoundingBox()
 # in the dataset modulus the stride
 
 #iren.Initialize()
+
+
+
+
 totalPoints = headCount/trailSize
 print "TP: " + str(totalPoints) + " " + str(headCount)
 if useIren == 0:
     fname = ""
+
+
     for i in range(0,headCount):
+
         Input3dPointsTraj();
         SetSphereSource();
         SetPolyData();
@@ -688,17 +710,29 @@ if useIren == 0:
         DepthSortPolyDataGlyphs()
         SetMappers()
         SetActors()
+        
+        headScalar = vtk.vtkDoubleArray()
+        headScalar.InsertNextValue(scalars.GetValue(i%trailSize))
+
+        polyDataHead.GetPointData().SetScalars(headScalar)
+
         renWin.Render()
+        SetSphereHeadSource();
+
         #time.sleep(0.01)
-        fname = "out_" + ("%04d" % i)+ ".png"
-        WritePngImage(fname)
+        #fname = "out_" + ("%04d" % i)+ ".png"
+        #WritePngImage(fname)
+        # print np.linalg.norm(np.array((LeftHand[i][0],LeftHand[i][1],LeftHand[i][2]))
+        #     -np.array((RightHand[i][0],RightHand[i][1],RightHand[i][2])))
+
 
         RemoveActors()
+
+
 else:
     # visualize a trail's worth then interact
     for i in range(0,trailSize):
         Input3dPointsTraj();
-        
     SetSphereSource();
     SetPolyData();
     SetGlyphs();
@@ -707,5 +741,7 @@ else:
     SetMappers()
     SetActors()
     renWin.Render()
+    SetSphereHeadSource();
+    
     iren.Start()
    
