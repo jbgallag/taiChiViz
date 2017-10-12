@@ -444,7 +444,7 @@ def SetSphereHeadSource():
 
 def SetPolyData():
     global polyDataHead,polyDataLH,polyDataRH,polyDataLF,polyDataRF
-    global ptsLH,ptsRH,ptsLF,ptsRF,ptsHead
+    global ptsLH,ptsRH,ptsLF,ptsRF,ptsHead,scalars
     polyDataHead.SetPoints(ptsHead)
     polyDataLH.SetPoints(ptsLH)
     polyDataRH.SetPoints(ptsRH)
