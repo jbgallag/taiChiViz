@@ -678,6 +678,16 @@ def WritePngImage(fname):
     pngWriter.SetFileName(fname)
     pngWriter.Write()
 
+def pointDistance(a, b):
+    return np.linalg.norm(np.array((a[0],a[1],a[2]))-np.array((b[0],b[1],b[2])))
+
+def pointAverage(a,b):
+    return (abs(a) + abs(b)) / 2
+
+def writeToFile(array, name):
+    with open(name + ".txt", "w") as outfile:
+        json.dump(array, outfile)
+   
 
 loadData(fileName);
 
@@ -694,13 +704,19 @@ SetBoundingBox()
 
 
 
-
 totalPoints = headCount/trailSize
 print "TP: " + str(totalPoints) + " " + str(headCount)
 if useIren == 0:
     fname = ""
 
     headColorIt = cycle(range(0, trailSize+1) + range(trailSize, 0, -1))
+    
+    handDistance = []
+    handHeight = []
+    footDistance = []
+    footHeight = []
+
+    
 
     for i in range(0,headCount):
 
@@ -727,8 +743,19 @@ if useIren == 0:
         # print np.linalg.norm(np.array((LeftHand[i][0],LeftHand[i][1],LeftHand[i][2]))
         #     -np.array((RightHand[i][0],RightHand[i][1],RightHand[i][2])))
 
+        handDistance.append(pointDistance(LeftHand[i], RightHand[i]))
+        footDistance.append(pointDistance(LeftFoot[i], RightFoot[i]))
+
+        handHeight.append(pointAverage(LeftHand[i][1], RightHand[i][1]))
+        footHeight.append(pointAverage(LeftFoot[i][1], RightFoot[i][1]))
+
 
         RemoveActors()
+    
+    writeToFile(handDistance, "handDistance")
+    writeToFile(footDistance, "footDistance")
+    writeToFile(handHeight, "handHeight")
+    writeToFile(footHeight, "footHeight")
 
 
 else:
