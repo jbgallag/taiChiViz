@@ -465,8 +465,8 @@ def SetGlyphs():
 
     glyphHead.SetSourceConnection(headSource.GetOutputPort()) #headSource
     glyphHead.SetInputData(polyDataHead)
-    if gscale == False:
-        glyphHead.ScalingOff()
+    #if gscale == False:
+    glyphHead.ScalingOff()
 
     glyphLH.SetSourceConnection(source.GetOutputPort())
     glyphLH.SetInputData(polyDataLH)
@@ -670,13 +670,15 @@ def SetBoundingBox():
     
 
 def WritePngImage(fname):
-    global largeImage,ren,pngWriter
+    global ren
 
-    largeImage.SetInput(ren)
-    largeImage.SetMagnification(1)
-    pngWriter.SetInputConnection(largeImage.GetOutputPort())
-    pngWriter.SetFileName(fname)
-    pngWriter.Write()
+    larImg = vtk.vtkRenderLargeImage()
+    pngWrite = vtk.vtkPNGWriter()
+    larImg.SetInput(ren)
+    larImg.SetMagnification(1)
+    pngWrite.SetInputConnection(larImg.GetOutputPort())
+    pngWrite.SetFileName(fname)
+    pngWrite.Write()
 
 def pointDistance(a, b):
     return np.linalg.norm(np.array((a[0],a[1],a[2]))-np.array((b[0],b[1],b[2])))
@@ -722,24 +724,27 @@ if useIren == 0:
 
         Input3dPointsTraj();
         SetSphereSource();
+        SetSphereHeadSource();
         SetPolyData();
+
+        headColor = next(headColorIt)
+        headScalar = vtk.vtkDoubleArray()
+        headScalar.InsertNextValue(scalars.GetValue(headColor))
+        polyDataHead.GetPointData().SetScalars(headScalar)
+
         SetGlyphs();
         SetCamera()
         DepthSortPolyDataGlyphs()
         SetMappers()
         SetActors()
         
-        headColor = next(headColorIt)
-        headScalar = vtk.vtkDoubleArray()
-        headScalar.InsertNextValue(scalars.GetValue(headColor))
-        polyDataHead.GetPointData().SetScalars(headScalar)
 
         renWin.Render()
-        SetSphereHeadSource();
-
         #time.sleep(0.01)
-        #fname = "out_" + ("%04d" % i)+ ".png"
-        #WritePngImage(fname)
+        fname = ("%04d" % i)+ ".png"
+        WritePngImage(fname)
+
+
         # print np.linalg.norm(np.array((LeftHand[i][0],LeftHand[i][1],LeftHand[i][2]))
         #     -np.array((RightHand[i][0],RightHand[i][1],RightHand[i][2])))
 
@@ -756,6 +761,8 @@ if useIren == 0:
     writeToFile(footDistance, "footDistance")
     writeToFile(handHeight, "handHeight")
     writeToFile(footHeight, "footHeight")
+
+
 
 
 else:
