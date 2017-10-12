@@ -7,6 +7,7 @@ import math
 
 import pyaudio
 import numpy as np
+from itertools import cycle
 
 class MyInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
     global ren
@@ -699,6 +700,7 @@ print "TP: " + str(totalPoints) + " " + str(headCount)
 if useIren == 0:
     fname = ""
 
+    headColorIt = cycle(range(0, trailSize+1) + range(trailSize, 0, -1))
 
     for i in range(0,headCount):
 
@@ -711,9 +713,9 @@ if useIren == 0:
         SetMappers()
         SetActors()
         
+        headColor = next(headColorIt)
         headScalar = vtk.vtkDoubleArray()
-        headScalar.InsertNextValue(scalars.GetValue(i%trailSize))
-
+        headScalar.InsertNextValue(scalars.GetValue(headColor))
         polyDataHead.GetPointData().SetScalars(headScalar)
 
         renWin.Render()
